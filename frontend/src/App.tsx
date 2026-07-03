@@ -35,7 +35,7 @@ export default function App() {
       <div className="h-full flex items-center justify-center p-6 text-center">
         <div>
           <div className="text-3xl mb-2">😕</div>
-          <div className="text-gray-600 text-sm">
+          <div className="text-ink-500 text-sm">
             {error}
             <br />
             Открой приложение через бота в Telegram.
@@ -46,7 +46,7 @@ export default function App() {
   }
 
   if (!me) {
-    return <div className="h-full flex items-center justify-center text-gray-400">Загрузка…</div>;
+    return <div className="h-full flex items-center justify-center text-ink-500">Загрузка…</div>;
   }
 
   return (

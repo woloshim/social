@@ -71,14 +71,14 @@ export default function Feed({ me, onViewProfile }: Props) {
   }
 
   return (
-    <div className="pb-20">
-      <div className="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-gray-100 px-4 py-3 flex items-center">
-        <h1 className="text-[15px] font-semibold tracking-[0.18em] text-gray-900">
-          SPARTA <span className="text-brand-600">SOCIAL</span>
+    <div className="pb-24">
+      <div className="sticky top-0 z-30 bg-ink-950/80 backdrop-blur-md border-b border-white/5 px-4 py-3 flex items-center">
+        <h1 className="text-[15px] font-semibold tracking-[0.18em] text-white">
+          SPARTA <span className="text-accent-400">SOCIAL</span>
         </h1>
         <button
           onClick={() => setShowCreate(true)}
-          className="ml-auto text-brand-600 border border-brand-200 rounded-full w-8 h-8 flex items-center justify-center text-lg leading-none"
+          className="ml-auto text-white bg-accent-500 shadow-glow rounded-full w-8 h-8 flex items-center justify-center text-lg leading-none"
         >
           +
         </button>
@@ -86,12 +86,12 @@ export default function Feed({ me, onViewProfile }: Props) {
 
       <StoriesBar groups={storyGroups} myUserId={me.id} onOpenGroup={setViewerIndex} onAddStory={handleAddStory} />
 
-      {error && <div className="p-4 text-red-500 text-sm">{error}</div>}
+      {error && <div className="p-4 text-red-400 text-sm">{error}</div>}
 
       {posts === null ? (
-        <div className="p-8 text-center text-gray-400">Загрузка ленты…</div>
+        <div className="p-8 text-center text-ink-500">Загрузка ленты…</div>
       ) : posts.length === 0 ? (
-        <div className="p-8 text-center text-gray-400">Пока нет постов — будь первым!</div>
+        <div className="p-8 text-center text-ink-500">Пока нет постов — будь первым!</div>
       ) : (
         posts.map((post) => (
           <PostCard

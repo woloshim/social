@@ -128,24 +128,24 @@ export default function PostCard({ post, myUserId, myRole, onDeleted, onViewProf
   const canDelete = post.author.id === myUserId || myRole === "admin";
 
   return (
-    <div className="bg-white border-b border-gray-100">
+    <div className="bg-ink-900/60 border border-white/5 rounded-2xl mx-3 mb-3 overflow-hidden">
       <div className="flex items-center gap-2 px-3 py-2">
         <button onClick={() => onViewProfile(post.author.id)} className="flex items-center gap-2">
           {post.author.avatar_url ? (
-            <img src={post.author.avatar_url} className="w-8 h-8 rounded-full object-cover" />
+            <img src={post.author.avatar_url} className="w-8 h-8 rounded-full object-cover ring-1 ring-white/10" />
           ) : (
-            <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-sm">{displayName(post.author)[0]}</div>
+            <div className="w-8 h-8 rounded-full bg-ink-700 flex items-center justify-center text-sm text-white">{displayName(post.author)[0]}</div>
           )}
           <div className="flex flex-col items-start">
-            <span className="text-sm font-semibold">{displayName(post.author)}</span>
-            <span className="text-[11px] text-gray-400">{timeAgo(post.created_at)}</span>
+            <span className="text-sm font-semibold text-white">{displayName(post.author)}</span>
+            <span className="text-[11px] text-ink-500">{timeAgo(post.created_at)}</span>
           </div>
         </button>
         {post.visibility === "hide_from_counselors" && (
-          <span className="ml-2 text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">🙈 скрыт от вожатых</span>
+          <span className="ml-2 text-[10px] bg-ink-800 text-ink-500 px-2 py-0.5 rounded-full">🙈 скрыт от вожатых</span>
         )}
         {canDelete && (
-          <button onClick={handleDelete} className="ml-auto text-gray-300 text-lg px-2">
+          <button onClick={handleDelete} className="ml-auto text-ink-500 text-lg px-2">
             🗑
           </button>
         )}
@@ -171,39 +171,39 @@ export default function PostCard({ post, myUserId, myRole, onDeleted, onViewProf
         <button onClick={loadComments} className="text-2xl leading-none">
           💬
         </button>
-        <span className="text-sm text-gray-500 ml-auto">
+        <span className="text-sm text-ink-500 ml-auto">
           {likeCount} лайков · {post.comment_count + (comments ? comments.length - post.comment_count : 0)} коммент.
         </span>
       </div>
 
       {post.caption && (
-        <div className="px-3 pb-2 text-sm">
-          <span className="font-semibold mr-1">{displayName(post.author)}</span>
+        <div className="px-3 pb-2 text-sm text-ink-300">
+          <span className="font-semibold mr-1 text-white">{displayName(post.author)}</span>
           {post.caption}
         </div>
       )}
 
       {showComments && (
-        <div className="px-3 pb-3 border-t border-gray-100 pt-2">
+        <div className="px-3 pb-3 border-t border-white/5 pt-2">
           {comments === null ? (
-            <div className="text-xs text-gray-400">Загрузка…</div>
+            <div className="text-xs text-ink-500">Загрузка…</div>
           ) : comments.length === 0 ? (
-            <div className="text-xs text-gray-400">Комментариев пока нет</div>
+            <div className="text-xs text-ink-500">Комментариев пока нет</div>
           ) : (
             <div className="flex flex-col gap-2 max-h-64 overflow-y-auto">
               {comments.map((c) => (
-                <div key={c.id} className="text-sm flex items-start gap-2">
+                <div key={c.id} className="text-sm flex items-start gap-2 text-ink-300">
                   <button onClick={() => onViewProfile(c.author.id)} className="shrink-0">
                     {c.author.avatar_url ? (
                       <img src={c.author.avatar_url} className="w-6 h-6 rounded-full object-cover mt-0.5" />
                     ) : (
-                      <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-[10px] mt-0.5">
+                      <div className="w-6 h-6 rounded-full bg-ink-700 flex items-center justify-center text-[10px] mt-0.5 text-white">
                         {displayName(c.author)[0]}
                       </div>
                     )}
                   </button>
                   <div>
-                    <span className="font-semibold mr-1">{displayName(c.author)}</span>
+                    <span className="font-semibold mr-1 text-white">{displayName(c.author)}</span>
                     {c.text}
                     {c.media_path && (
                       <img src={mediaUrl(c.media_path)} loading="lazy" className="mt-1 max-h-40 rounded-lg object-cover" />
@@ -227,7 +227,7 @@ export default function PostCard({ post, myUserId, myRole, onDeleted, onViewProf
           )}
 
           <div className="flex gap-2 mt-2 items-center">
-            <button onClick={() => commentFileRef.current?.click()} className="text-gray-400 text-lg px-1">
+            <button onClick={() => commentFileRef.current?.click()} className="text-ink-500 text-lg px-1">
               📷
             </button>
             <input
@@ -242,9 +242,9 @@ export default function PostCard({ post, myUserId, myRole, onDeleted, onViewProf
               onChange={(e) => setCommentText(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && submitComment()}
               placeholder="Написать комментарий…"
-              className="flex-1 border border-gray-200 rounded-full px-3 py-1.5 text-sm outline-none focus:border-brand-400"
+              className="flex-1 bg-ink-800 border border-white/5 rounded-full px-3 py-1.5 text-sm text-white placeholder:text-ink-500 outline-none focus:border-accent-500"
             />
-            <button onClick={submitComment} disabled={submittingComment} className="text-brand-600 text-sm font-semibold px-2">
+            <button onClick={submitComment} disabled={submittingComment} className="text-accent-400 text-sm font-semibold px-2">
               Отпр.
             </button>
           </div>

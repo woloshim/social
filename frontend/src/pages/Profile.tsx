@@ -96,43 +96,43 @@ export default function Profile({ me, onProfileUpdated, userId, onBack }: Props)
   }
 
   if (!profile) {
-    return <div className="p-8 text-center text-gray-400">Загрузка…</div>;
+    return <div className="p-8 text-center text-ink-500">Загрузка…</div>;
   }
 
   return (
-    <div className="pb-20">
+    <div className="pb-24">
       {onBack && (
-        <div className="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-gray-100 px-3 py-2 flex items-center">
-          <button onClick={onBack} className="text-gray-600 text-lg px-2">
+        <div className="sticky top-0 z-30 bg-ink-950/80 backdrop-blur-md border-b border-white/5 px-3 py-2 flex items-center">
+          <button onClick={onBack} className="text-ink-300 text-lg px-2">
             ←
           </button>
-          <span className="text-sm font-semibold ml-1">Профиль</span>
+          <span className="text-sm font-semibold ml-1 text-white">Профиль</span>
         </div>
       )}
 
-      <div className="px-4 py-4 flex flex-col items-center gap-2 border-b border-gray-100">
+      <div className="px-4 py-4 flex flex-col items-center gap-2 border-b border-white/5">
         {profile.avatar_url ? (
-          <img src={profile.avatar_url} className="w-20 h-20 rounded-full object-cover" />
+          <img src={profile.avatar_url} className="w-20 h-20 rounded-full object-cover ring-2 ring-white/10" />
         ) : (
-          <div className="w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center text-3xl">
+          <div className="w-20 h-20 rounded-full bg-ink-700 flex items-center justify-center text-3xl text-white">
             {(profile.first_name || profile.username || "?")[0]}
           </div>
         )}
-        <div className="text-lg font-semibold">{profile.first_name || profile.username}</div>
+        <div className="text-lg font-semibold text-white">{profile.first_name || profile.username}</div>
         <div className="flex gap-2 text-xs">
-          <span className="bg-brand-50 text-brand-600 px-2 py-0.5 rounded-full">{ROLE_LABELS[profile.role]}</span>
-          {profile.squad && <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">Отряд {profile.squad}</span>}
+          <span className="bg-accent-500/15 text-accent-400 px-2 py-0.5 rounded-full">{ROLE_LABELS[profile.role]}</span>
+          {profile.squad && <span className="bg-ink-800 text-ink-300 px-2 py-0.5 rounded-full">Отряд {profile.squad}</span>}
         </div>
-        <div className="text-xs text-gray-400">{profile.follower_count} подписчиков · {profile.following_count} подписок</div>
+        <div className="text-xs text-ink-500">{profile.follower_count} подписчиков · {profile.following_count} подписок</div>
 
         {!isOwn ? (
           <>
-            {profile.bio && <div className="text-sm text-gray-600 text-center mt-1">{profile.bio}</div>}
+            {profile.bio && <div className="text-sm text-ink-300 text-center mt-1">{profile.bio}</div>}
             <button
               onClick={toggleFollow}
               disabled={followBusy}
               className={`mt-2 px-5 py-1.5 rounded-full text-sm font-semibold ${
-                profile.is_following ? "bg-gray-100 text-gray-600" : "bg-brand-500 text-white"
+                profile.is_following ? "bg-ink-800 text-ink-300" : "bg-accent-500 text-white"
               }`}
             >
               {profile.is_following ? "Вы подписаны" : "Подписаться"}
@@ -140,20 +140,20 @@ export default function Profile({ me, onProfileUpdated, userId, onBack }: Props)
           </>
         ) : !editing ? (
           <>
-            {me.bio && <div className="text-sm text-gray-600 text-center mt-1">{me.bio}</div>}
-            <button onClick={() => setEditing(true)} className="text-brand-600 text-sm font-semibold mt-2">
+            {me.bio && <div className="text-sm text-ink-300 text-center mt-1">{me.bio}</div>}
+            <button onClick={() => setEditing(true)} className="text-accent-400 text-sm font-semibold mt-2">
               Редактировать профиль
             </button>
           </>
         ) : (
           <div className="w-full mt-2 flex flex-col gap-3">
             <div>
-              <div className="text-xs text-gray-500 mb-1">Аватар</div>
+              <div className="text-xs text-ink-500 mb-1">Аватар</div>
               <div className="flex gap-2">
                 <button
                   onClick={switchToTelegramAvatar}
                   className={`flex-1 rounded-lg py-2 text-sm border ${
-                    me.avatar_source === "telegram" ? "border-brand-400 text-brand-600 bg-brand-50" : "border-gray-200 text-gray-500"
+                    me.avatar_source === "telegram" ? "border-accent-500 text-accent-400 bg-accent-500/10" : "border-white/10 text-ink-500"
                   }`}
                 >
                   Из Telegram
@@ -162,7 +162,7 @@ export default function Profile({ me, onProfileUpdated, userId, onBack }: Props)
                   onClick={switchToCustomAvatar}
                   disabled={uploadingAvatar}
                   className={`flex-1 rounded-lg py-2 text-sm border ${
-                    me.avatar_source === "custom" ? "border-brand-400 text-brand-600 bg-brand-50" : "border-gray-200 text-gray-500"
+                    me.avatar_source === "custom" ? "border-accent-500 text-accent-400 bg-accent-500/10" : "border-white/10 text-ink-500"
                   }`}
                 >
                   {uploadingAvatar ? "Загрузка…" : "Своё фото"}
@@ -181,11 +181,11 @@ export default function Profile({ me, onProfileUpdated, userId, onBack }: Props)
             </div>
 
             <div>
-              <div className="text-xs text-gray-500 mb-1">Отряд</div>
+              <div className="text-xs text-ink-500 mb-1">Отряд</div>
               <select
                 value={squad}
                 onChange={(e) => setSquad(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white"
+                className="w-full border border-white/10 rounded-lg px-3 py-2 text-sm bg-ink-800 text-white"
               >
                 <option value="">Не выбран</option>
                 {SQUADS.map((s) => (
@@ -201,20 +201,20 @@ export default function Profile({ me, onProfileUpdated, userId, onBack }: Props)
               onChange={(e) => setBio(e.target.value)}
               placeholder="О себе…"
               rows={2}
-              className="border border-gray-200 rounded-lg px-3 py-2 text-sm resize-none"
+              className="border border-white/10 rounded-lg px-3 py-2 text-sm bg-ink-800 text-white placeholder:text-ink-500 resize-none"
             />
             <div className="flex gap-2">
-              <button onClick={save} disabled={saving} className="flex-1 bg-brand-500 text-white rounded-lg py-2 text-sm font-semibold">
+              <button onClick={save} disabled={saving} className="flex-1 bg-accent-500 text-white rounded-lg py-2 text-sm font-semibold">
                 Сохранить
               </button>
-              <button onClick={() => setEditing(false)} className="flex-1 bg-gray-100 text-gray-600 rounded-lg py-2 text-sm">
+              <button onClick={() => setEditing(false)} className="flex-1 bg-ink-800 text-ink-300 rounded-lg py-2 text-sm">
                 Отмена
               </button>
             </div>
           </div>
         )}
 
-        <div className="text-sm text-gray-400 mt-1">{posts.length} публикаций</div>
+        <div className="text-sm text-ink-500 mt-1">{posts.length} публикаций</div>
       </div>
 
       <div className="grid grid-cols-3 gap-0.5 mt-0.5">

@@ -39,17 +39,17 @@ export default function CreatePostModal({ onClose, onCreated }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center">
-      <div className="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl p-4 max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/70 z-50 flex items-end sm:items-center justify-center">
+      <div className="bg-ink-900 border border-white/10 w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl p-4 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center mb-3">
-          <h2 className="text-lg font-semibold">Новый пост</h2>
-          <button onClick={onClose} className="ml-auto text-2xl leading-none px-2">
+          <h2 className="text-lg font-semibold text-white">Новый пост</h2>
+          <button onClick={onClose} className="ml-auto text-2xl leading-none px-2 text-ink-300">
             ×
           </button>
         </div>
 
         {!preview ? (
-          <label className="flex flex-col items-center justify-center h-48 border-2 border-dashed border-gray-200 rounded-xl text-gray-400 cursor-pointer">
+          <label className="flex flex-col items-center justify-center h-48 border-2 border-dashed border-ink-600 rounded-xl text-ink-500 cursor-pointer">
             <span className="text-3xl mb-1">📷</span>
             <span className="text-sm">Выбрать фото или видео</span>
             <input
@@ -79,21 +79,21 @@ export default function CreatePostModal({ onClose, onCreated }: Props) {
           value={caption}
           onChange={(e) => setCaption(e.target.value)}
           placeholder="Подпись к посту…"
-          className="w-full mt-3 border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-brand-400 resize-none"
+          className="w-full mt-3 bg-ink-800 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder:text-ink-500 outline-none focus:border-accent-500 resize-none"
           rows={3}
         />
 
-        <label className="flex items-center gap-2 mt-3 text-sm text-gray-600">
+        <label className="flex items-center gap-2 mt-3 text-sm text-ink-300">
           <input type="checkbox" checked={hideFromCounselors} onChange={(e) => setHideFromCounselors(e.target.checked)} />
           Скрыть от вожатых (для администрации всё равно будет видно — модерация безопасности)
         </label>
 
-        {error && <div className="text-red-500 text-sm mt-2">{error}</div>}
+        {error && <div className="text-red-400 text-sm mt-2">{error}</div>}
 
         <button
           onClick={submit}
           disabled={!file || submitting}
-          className="w-full mt-4 bg-brand-500 disabled:bg-gray-200 disabled:text-gray-400 text-white rounded-xl py-2.5 font-semibold"
+          className="w-full mt-4 bg-accent-500 disabled:bg-ink-700 disabled:text-ink-500 text-white rounded-xl py-2.5 font-semibold"
         >
           {submitting ? "Публикуем…" : "Опубликовать"}
         </button>

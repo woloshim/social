@@ -4,12 +4,18 @@
 
 html, body, #root {
   height: 100%;
-  background: #fafafa;
+  background: #0a0f1c;
 }
 
 body {
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior-y: contain;
+  background:
+    radial-gradient(60% 40% at 50% 0%, rgba(90, 154, 215, 0.28), transparent 70%),
+    radial-gradient(50% 30% at 90% 10%, rgba(90, 154, 215, 0.12), transparent 70%),
+    #0a0f1c;
+  color: #e7ecf5;
+  min-height: 100%;
 }
 
 ::-webkit-scrollbar {

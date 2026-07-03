@@ -45,21 +45,21 @@ export default function Admin() {
 
   return (
     <div className="pb-24 px-3">
-      <h1 className="text-lg font-semibold text-gray-900 py-4">Панель администратора</h1>
+      <h1 className="text-lg font-semibold text-white py-4">Панель администратора</h1>
 
       {stats && (
         <div className="grid grid-cols-3 gap-2 mb-4">
-          <div className="border border-gray-100 rounded-xl p-3 text-center">
-            <div className="text-lg font-semibold text-gray-900">{stats.users}</div>
-            <div className="text-xs text-gray-400">участников</div>
+          <div className="border border-white/5 bg-ink-900/60 rounded-xl p-3 text-center">
+            <div className="text-lg font-semibold text-white">{stats.users}</div>
+            <div className="text-xs text-ink-500">участников</div>
           </div>
-          <div className="border border-gray-100 rounded-xl p-3 text-center">
-            <div className="text-lg font-semibold text-gray-900">{stats.posts}</div>
-            <div className="text-xs text-gray-400">постов</div>
+          <div className="border border-white/5 bg-ink-900/60 rounded-xl p-3 text-center">
+            <div className="text-lg font-semibold text-white">{stats.posts}</div>
+            <div className="text-xs text-ink-500">постов</div>
           </div>
-          <div className="border border-gray-100 rounded-xl p-3 text-center">
-            <div className="text-lg font-semibold text-gray-900">{stats.active_stories}</div>
-            <div className="text-xs text-gray-400">историй сейчас</div>
+          <div className="border border-white/5 bg-ink-900/60 rounded-xl p-3 text-center">
+            <div className="text-lg font-semibold text-white">{stats.active_stories}</div>
+            <div className="text-xs text-ink-500">историй сейчас</div>
           </div>
         </div>
       )}
@@ -68,27 +68,27 @@ export default function Admin() {
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder="Поиск по имени, юзернейму, telegram id…"
-        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm mb-3"
+        className="w-full bg-ink-800 border border-white/10 rounded-lg px-3 py-2 text-sm mb-3 text-white placeholder:text-ink-500"
       />
 
       <div className="flex flex-col gap-2">
         {filtered.map((u) => (
-          <div key={u.id} className="border border-gray-100 rounded-xl p-3 flex items-center gap-3">
+          <div key={u.id} className="border border-white/5 bg-ink-900/60 rounded-xl p-3 flex items-center gap-3">
             {u.avatar_url ? (
               <img src={u.avatar_url} className="w-10 h-10 rounded-full object-cover" />
             ) : (
-              <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">{(u.first_name || u.username || "?")[0]}</div>
+              <div className="w-10 h-10 rounded-full bg-ink-700 flex items-center justify-center text-white">{(u.first_name || u.username || "?")[0]}</div>
             )}
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-semibold truncate">
-                {u.first_name} {u.last_name} {u.username && <span className="text-gray-400 font-normal">@{u.username}</span>}
+              <div className="text-sm font-semibold truncate text-white">
+                {u.first_name} {u.last_name} {u.username && <span className="text-ink-500 font-normal">@{u.username}</span>}
               </div>
-              <div className="text-xs text-gray-400">tg id: {u.telegram_id}</div>
+              <div className="text-xs text-ink-500">tg id: {u.telegram_id}</div>
             </div>
             <select
               value={u.role}
               onChange={(e) => setRole(u.id, e.target.value)}
-              className="border border-gray-200 rounded-lg text-xs px-2 py-1.5"
+              className="bg-ink-800 border border-white/10 rounded-lg text-xs px-2 py-1.5 text-white"
             >
               {ROLES.map((r) => (
                 <option key={r.value} value={r.value}>
@@ -99,7 +99,7 @@ export default function Admin() {
             <select
               value={u.squad || ""}
               onChange={(e) => setSquad(u.id, e.target.value)}
-              className="w-20 border border-gray-200 rounded-lg text-xs px-2 py-1.5"
+              className="w-20 bg-ink-800 border border-white/10 rounded-lg text-xs px-2 py-1.5 text-white"
             >
               <option value="">Отряд —</option>
               {["1", "2", "3", "4", "5"].map((s) => (

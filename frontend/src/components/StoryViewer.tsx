@@ -64,7 +64,7 @@ export default function StoryViewer({ groups, startIndex, onClose }: Props) {
         {group.stories.map((s, i) => (
           <div key={s.id} className="flex-1 h-0.5 bg-white/30 rounded overflow-hidden">
             <div
-              className="h-full bg-white"
+              className="h-full bg-gradient-to-r from-gold-400 to-gold-300"
               style={{ width: i < storyIndex ? "100%" : i === storyIndex ? `${progress}%` : "0%" }}
             />
           </div>
