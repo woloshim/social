@@ -151,18 +151,24 @@ export default function PostCard({ post, myUserId, myRole, onDeleted, onViewProf
         )}
       </div>
 
-      <div className="relative bg-black flex items-center justify-center" onClick={handleMediaTap}>
-        {post.media_type === "photo" ? (
-          <img src={mediaUrl(post.media_path)} loading="lazy" className="w-full max-h-[480px] object-contain" draggable={false} />
-        ) : (
-          <video src={mediaUrl(post.media_path)} preload="metadata" className="w-full max-h-[480px] object-contain" controls playsInline />
-        )}
-        {showHeartBurst && (
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <span className="text-white text-8xl drop-shadow-lg animate-heart-burst">❤️</span>
-          </div>
-        )}
-      </div>
+      {post.media_type === "text" ? (
+        <div className="px-4 py-6 text-[15px] leading-relaxed text-white whitespace-pre-wrap break-words">
+          {post.caption}
+        </div>
+      ) : (
+        <div className="relative bg-black flex items-center justify-center" onClick={handleMediaTap}>
+          {post.media_type === "photo" ? (
+            <img src={mediaUrl(post.media_path)} loading="lazy" className="w-full max-h-[480px] object-contain" draggable={false} />
+          ) : (
+            <video src={mediaUrl(post.media_path)} preload="metadata" className="w-full max-h-[480px] object-contain" controls playsInline />
+          )}
+          {showHeartBurst && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <span className="text-white text-8xl drop-shadow-lg animate-heart-burst">❤️</span>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="flex items-center gap-4 px-3 py-2">
         <button onClick={toggleLike} className="text-2xl leading-none">
@@ -176,7 +182,7 @@ export default function PostCard({ post, myUserId, myRole, onDeleted, onViewProf
         </span>
       </div>
 
-      {post.caption && (
+      {post.media_type !== "text" && post.caption && (
         <div className="px-3 pb-2 text-sm text-ink-300">
           <span className="font-semibold mr-1 text-white">{displayName(post.author)}</span>
           {post.caption}

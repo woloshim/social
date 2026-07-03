@@ -19,13 +19,15 @@ export default function CreatePostModal({ onClose, onCreated }: Props) {
     setPreview(f ? URL.createObjectURL(f) : null);
   }
 
+  const canSubmit = !!file || caption.trim().length > 0;
+
   async function submit() {
-    if (!file) return;
+    if (!canSubmit) return;
     setSubmitting(true);
     setError(null);
     try {
       const form = new FormData();
-      form.append("media", file);
+      if (file) form.append("media", file);
       form.append("caption", caption);
       form.append("visibility", hideFromCounselors ? "hide_from_counselors" : "public");
       const post = await api.createPost(form);
@@ -49,9 +51,10 @@ export default function CreatePostModal({ onClose, onCreated }: Props) {
         </div>
 
         {!preview ? (
-          <label className="flex flex-col items-center justify-center h-48 border-2 border-dashed border-ink-600 rounded-xl text-ink-500 cursor-pointer">
+          <label className="flex flex-col items-center justify-center h-32 border-2 border-dashed border-ink-600 rounded-xl text-ink-500 cursor-pointer">
             <span className="text-3xl mb-1">📷</span>
             <span className="text-sm">Выбрать фото или видео</span>
+            <span className="text-xs text-ink-500 mt-0.5">(необязательно — можно опубликовать просто текст)</span>
             <input
               type="file"
               accept="image/*,video/*"
@@ -78,9 +81,9 @@ export default function CreatePostModal({ onClose, onCreated }: Props) {
         <textarea
           value={caption}
           onChange={(e) => setCaption(e.target.value)}
-          placeholder="Подпись к посту…"
+          placeholder={file ? "Подпись к посту…" : "Напиши что-нибудь…"}
           className="w-full mt-3 bg-ink-800 border border-white/10 rounded-xl px-3 py-2 text-sm text-white placeholder:text-ink-500 outline-none focus:border-accent-500 resize-none"
-          rows={3}
+          rows={file ? 3 : 5}
         />
 
         <label className="flex items-center gap-2 mt-3 text-sm text-ink-300">
@@ -92,7 +95,7 @@ export default function CreatePostModal({ onClose, onCreated }: Props) {
 
         <button
           onClick={submit}
-          disabled={!file || submitting}
+          disabled={!canSubmit || submitting}
           className="w-full mt-4 bg-accent-500 disabled:bg-ink-700 disabled:text-ink-500 text-white rounded-xl py-2.5 font-semibold"
         >
           {submitting ? "Публикуем…" : "Опубликовать"}

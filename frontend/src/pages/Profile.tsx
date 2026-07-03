@@ -219,11 +219,15 @@ export default function Profile({ me, onProfileUpdated, userId, onBack }: Props)
 
       <div className="grid grid-cols-3 gap-0.5 mt-0.5">
         {posts.map((p) => (
-          <div key={p.id} className="aspect-square bg-black relative">
+          <div key={p.id} className="aspect-square bg-ink-800 relative">
             {p.media_type === "photo" ? (
               <img src={mediaUrl(p.thumb_path || p.media_path)} loading="lazy" className="w-full h-full object-cover" />
-            ) : (
+            ) : p.media_type === "video" ? (
               <video src={mediaUrl(p.media_path)} preload="metadata" className="w-full h-full object-cover" muted />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center p-2">
+                <span className="text-[10px] leading-snug text-ink-300 text-center line-clamp-5">{p.caption}</span>
+              </div>
             )}
             {p.visibility === "hide_from_counselors" && (
               <span className="absolute top-1 right-1 text-xs">🙈</span>

@@ -93,16 +93,29 @@ export function telegramAuth(req: Request, res: Response, next: NextFunction) {
     const role = ADMIN_IDS.includes(telegramId) ? "admin" : "child";
     const info = db
       .prepare(
-        `INSERT INTO users (telegram_id, username, first_name, last_name, role) VALUES (?, ?, ?, ?, ?)`
+        `INSERT INTO users (telegram_id, username, first_name, last_name, photo_url, role) VALUES (?, ?, ?, ?, ?, ?)`
       )
-      .run(telegramId, telegramUser.username || null, telegramUser.first_name || null, telegramUser.last_name || null, role);
+      .run(
+        telegramId,
+        telegramUser.username || null,
+        telegramUser.first_name || null,
+        telegramUser.last_name || null,
+        telegramUser.photo_url || null,
+        role
+      );
     user = db.prepare("SELECT * FROM users WHERE id = ?").get(info.lastInsertRowid) as AuthedUser;
   } else {
-    // Keep profile info fresh (name/username can change), but never touch role here.
-    db.prepare("UPDATE users SET username = ?, first_name = ?, last_name = ? WHERE id = ?").run(
+    // Keep profile info fresh (name/username/photo can change), but never touch role here.
+    // Telegram only includes photo_url in initData when the user has a public profile photo,
+    // so we only overwrite it when a fresh value is actually present (avoids wiping it on
+    // requests where Telegram omits the field).
+    db.prepare(
+      "UPDATE users SET username = ?, first_name = ?, last_name = ?, photo_url = COALESCE(?, photo_url) WHERE id = ?"
+    ).run(
       telegramUser.username || null,
       telegramUser.first_name || null,
       telegramUser.last_name || null,
+      telegramUser.photo_url || null,
       user.id
     );
     // Promote to admin if they're in ADMIN_TELEGRAM_IDS but weren't marked as such yet

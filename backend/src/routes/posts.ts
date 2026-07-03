@@ -59,7 +59,7 @@ function serializePost(row: any, viewerId: number) {
       avatar_url: avatarUrl({ avatar_source: row.avatar_source, custom_avatar_path: row.custom_avatar_path, photo_url: row.photo_url }),
       role: row.author_role,
     },
-    media_path: `/uploads/${row.media_path}`,
+    media_path: row.media_path ? `/uploads/${row.media_path}` : null,
     thumb_path: row.thumb_path ? `/uploads/${row.thumb_path}` : null,
     media_type: row.media_type,
     caption: row.caption,
@@ -109,23 +109,30 @@ router.get("/user/:userId", (req, res) => {
   res.json(rows.map((r) => serializePost(r, user.id)));
 });
 
-// POST /api/posts — создать пост (multipart: media, caption, visibility)
+// POST /api/posts — создать пост (multipart: media, caption, visibility).
+// Медиа необязательно: если файла нет, но есть текст в caption — публикуется текстовый пост.
 router.post("/", upload.single("media"), async (req, res) => {
   const user = req.user!;
-  if (!req.file) {
-    res.status(400).json({ error: "Файл не загружен" });
+  const visibility = req.body.visibility === "hide_from_counselors" ? "hide_from_counselors" : "public";
+  const caption = (req.body.caption || "").toString().trim().slice(0, 2000);
+
+  if (!req.file && !caption) {
+    res.status(400).json({ error: "Добавь фото/видео или текст" });
     return;
   }
-  const visibility = req.body.visibility === "hide_from_counselors" ? "hide_from_counselors" : "public";
-  const caption = (req.body.caption || "").toString().slice(0, 2000);
-  const mediaType = mediaTypeFromMime(req.file.mimetype);
 
-  let mediaFilename = req.file.filename;
+  let mediaFilename: string | null = null;
   let thumbFilename: string | null = null;
-  if (mediaType === "photo") {
-    const processed = await processUploadedImage(req.file.filename, req.file.mimetype, { withThumb: true });
-    mediaFilename = processed.mediaFilename;
-    thumbFilename = processed.thumbFilename;
+  let mediaType: string = "text";
+
+  if (req.file) {
+    mediaType = mediaTypeFromMime(req.file.mimetype);
+    mediaFilename = req.file.filename;
+    if (mediaType === "photo") {
+      const processed = await processUploadedImage(req.file.filename, req.file.mimetype, { withThumb: true });
+      mediaFilename = processed.mediaFilename;
+      thumbFilename = processed.thumbFilename;
+    }
   }
 
   const info = db

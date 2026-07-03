@@ -100,4 +100,43 @@ ensureColumn("users", "avatar_source", "TEXT NOT NULL DEFAULT 'telegram'");
 ensureColumn("users", "custom_avatar_path", "TEXT");
 ensureColumn("comments", "media_path", "TEXT");
 
+// Миграция: разрешить текстовые посты без медиа (media_path NULL, media_type = 'text').
+// Исходная схема требовала media_path NOT NULL и media_type IN ('photo','video') — SQLite не
+// умеет менять constraints через ALTER TABLE, поэтому пересобираем таблицу целиком, сохраняя
+// все данные. Идемпотентно: если таблица уже пересобрана (media_path допускает NULL), ничего
+// не делаем.
+function migratePostsAllowText() {
+  const cols = db.prepare(`PRAGMA table_info(posts)`).all() as { name: string; notnull: number }[];
+  const mediaPathCol = cols.find((c) => c.name === "media_path");
+  if (!mediaPathCol || mediaPathCol.notnull !== 1) return; // уже мигрировано (или таблицы ещё нет)
+
+  const migrate = db.transaction(() => {
+    db.exec(`
+      CREATE TABLE posts_new (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        author_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        media_path TEXT,
+        media_type TEXT NOT NULL CHECK (media_type IN ('photo','video','text')),
+        thumb_path TEXT,
+        caption TEXT,
+        visibility TEXT NOT NULL DEFAULT 'public' CHECK (visibility IN ('public','hide_from_counselors')),
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+      INSERT INTO posts_new (id, author_id, media_path, media_type, thumb_path, caption, visibility, created_at)
+        SELECT id, author_id, media_path, media_type, thumb_path, caption, visibility, created_at FROM posts;
+      DROP TABLE posts;
+      ALTER TABLE posts_new RENAME TO posts;
+      CREATE INDEX IF NOT EXISTS idx_posts_created ON posts(created_at DESC);
+    `);
+  });
+
+  db.pragma("foreign_keys = OFF");
+  try {
+    migrate();
+  } finally {
+    db.pragma("foreign_keys = ON");
+  }
+}
+migratePostsAllowText();
+
 export default db;

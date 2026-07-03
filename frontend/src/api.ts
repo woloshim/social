@@ -10,8 +10,8 @@ const API_BASE = `${API_ORIGIN}/api`;
 
 // Файлы (фото/видео) отдаются бэкендом по относительному пути /uploads/...,
 // поэтому их тоже нужно приводить к абсолютному адресу бэкенда.
-export function mediaUrl(path: string): string {
-  if (!path) return path;
+export function mediaUrl(path: string | null | undefined): string {
+  if (!path) return "";
   if (/^https?:\/\//i.test(path)) return path;
   return `${API_ORIGIN}${path}`;
 }
@@ -69,9 +69,9 @@ export interface PostAuthor {
 export interface Post {
   id: number;
   author: PostAuthor;
-  media_path: string;
+  media_path: string | null;
   thumb_path: string | null;
-  media_type: "photo" | "video";
+  media_type: "photo" | "video" | "text";
   caption: string | null;
   visibility: "public" | "hide_from_counselors";
   created_at: string;
