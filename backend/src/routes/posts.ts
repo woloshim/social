@@ -3,8 +3,21 @@ import db from "../db";
 import { AuthedUser } from "../auth";
 import { upload, mediaTypeFromMime } from "../upload";
 import { processUploadedImage } from "../imageProcessing";
+import { notifyUser, displayName } from "../notify";
 
 const router = Router();
+
+// Автор поста + его telegram_id (для уведомлений), либо null если пост не найден.
+function getPostAuthor(postId: number): { author_id: number; telegram_id: string } | null {
+  const row = db
+    .prepare(
+      `SELECT p.author_id, u.telegram_id
+       FROM posts p JOIN users u ON u.id = p.author_id
+       WHERE p.id = ?`
+    )
+    .get(postId) as { author_id: number; telegram_id: string } | undefined;
+  return row || null;
+}
 
 // admin всегда видит всё (safety net), остальные не видят посты со скрытием "hide_from_counselors"
 // адресованные вожатым/детям — child и counselor видят: public + свои собственные посты любой видимости.
@@ -144,7 +157,17 @@ router.post("/:id/like", (req, res) => {
     db.prepare("INSERT INTO likes (post_id, user_id) VALUES (?, ?)").run(postId, user.id);
   }
   const likeCount = db.prepare("SELECT COUNT(*) c FROM likes WHERE post_id = ?").get(postId) as any;
-  res.json({ liked: !existing, like_count: likeCount.c });
+  const nowLiked = !existing;
+  res.json({ liked: nowLiked, like_count: likeCount.c });
+
+  // Уведомляем автора только когда лайк ПОСТАВИЛИ (не сняли) и не самому себе.
+  // Отправка не блокирует ответ — выполняется уже после res.json.
+  if (nowLiked) {
+    const post = getPostAuthor(postId);
+    if (post && post.author_id !== user.id) {
+      notifyUser(post.telegram_id, `❤️ ${displayName(user)} лайкнул(а) ваш пост в Sparta Social`);
+    }
+  }
 });
 
 // GET /api/posts/:id/comments
@@ -184,6 +207,13 @@ router.post("/:id/comments", (req, res) => {
     created_at: row.created_at,
     author: { id: user.id, username: user.username, first_name: user.first_name, last_name: user.last_name, photo_url: user.photo_url },
   });
+
+  // Уведомляем автора поста о новом комментарии (кроме случая, когда комментирует сам себе).
+  const post = getPostAuthor(postId);
+  if (post && post.author_id !== user.id) {
+    const preview = text.length > 200 ? text.slice(0, 200) + "…" : text;
+    notifyUser(post.telegram_id, `💬 ${displayName(user)} написал(а) комментарий к вашему посту в Sparta Social:\n«${preview}»`);
+  }
 });
 
 export default router;

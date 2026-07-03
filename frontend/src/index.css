@@ -15,3 +15,26 @@ body {
 ::-webkit-scrollbar {
   display: none;
 }
+
+@keyframes heart-burst {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  25% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+  60% {
+    transform: scale(0.95);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0;
+  }
+}
+
+.animate-heart-burst {
+  animation: heart-burst 0.7s ease-out forwards;
+}

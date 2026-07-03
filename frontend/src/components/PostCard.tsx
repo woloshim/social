@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Post, Comment, api, mediaUrl } from "../api";
 import { hapticImpact } from "../telegram";
+
+const DOUBLE_TAP_MS = 300;
 
 interface Props {
   post: Post;
@@ -29,6 +31,9 @@ export default function PostCard({ post, myUserId, myRole, onDeleted }: Props) {
   const [showComments, setShowComments] = useState(false);
   const [comments, setComments] = useState<Comment[] | null>(null);
   const [commentText, setCommentText] = useState("");
+  const [showHeartBurst, setShowHeartBurst] = useState(false);
+  const lastTapRef = useRef(0);
+  const burstTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   async function toggleLike() {
     hapticImpact("light");
@@ -42,6 +47,40 @@ export default function PostCard({ post, myUserId, myRole, onDeleted }: Props) {
       // revert on error
       setLiked(liked);
       setLikeCount(post.like_count);
+    }
+  }
+
+  // Ставит лайк (как в Instagram — двойной тап только лайкает, повторный двойной тап не снимает лайк).
+  async function likeOnly() {
+    if (!liked) {
+      setLiked(true);
+      setLikeCount((c) => c + 1);
+      try {
+        const res = await api.toggleLike(post.id);
+        setLiked(res.liked);
+        setLikeCount(res.like_count);
+      } catch {
+        setLiked(false);
+        setLikeCount(post.like_count);
+      }
+    }
+  }
+
+  function triggerHeartBurst() {
+    setShowHeartBurst(true);
+    if (burstTimerRef.current) clearTimeout(burstTimerRef.current);
+    burstTimerRef.current = setTimeout(() => setShowHeartBurst(false), 700);
+  }
+
+  function handleMediaTap() {
+    const now = Date.now();
+    if (now - lastTapRef.current < DOUBLE_TAP_MS) {
+      lastTapRef.current = 0;
+      hapticImpact("medium");
+      triggerHeartBurst();
+      likeOnly();
+    } else {
+      lastTapRef.current = now;
     }
   }
 
@@ -91,11 +130,16 @@ export default function PostCard({ post, myUserId, myRole, onDeleted }: Props) {
         )}
       </div>
 
-      <div className="bg-black flex items-center justify-center">
+      <div className="relative bg-black flex items-center justify-center" onClick={handleMediaTap}>
         {post.media_type === "photo" ? (
-          <img src={mediaUrl(post.media_path)} loading="lazy" className="w-full max-h-[480px] object-contain" />
+          <img src={mediaUrl(post.media_path)} loading="lazy" className="w-full max-h-[480px] object-contain" draggable={false} />
         ) : (
           <video src={mediaUrl(post.media_path)} preload="metadata" className="w-full max-h-[480px] object-contain" controls playsInline />
+        )}
+        {showHeartBurst && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <span className="text-white text-8xl drop-shadow-lg animate-heart-burst">❤️</span>
+          </div>
         )}
       </div>
 
