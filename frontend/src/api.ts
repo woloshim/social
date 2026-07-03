@@ -45,22 +45,30 @@ export interface UserProfile {
   first_name: string | null;
   last_name: string | null;
   photo_url: string | null;
+  avatar_url: string | null;
+  avatar_source: "telegram" | "custom";
   role: "child" | "counselor" | "admin";
   squad: string | null;
   bio: string | null;
   created_at: string;
+  follower_count: number;
+  following_count: number;
+  is_following?: boolean;
+}
+
+export interface PostAuthor {
+  id: number;
+  username: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  photo_url: string | null;
+  avatar_url: string | null;
+  role: string;
 }
 
 export interface Post {
   id: number;
-  author: {
-    id: number;
-    username: string | null;
-    first_name: string | null;
-    last_name: string | null;
-    photo_url: string | null;
-    role: string;
-  };
+  author: PostAuthor;
   media_path: string;
   thumb_path: string | null;
   media_type: "photo" | "video";
@@ -75,22 +83,25 @@ export interface Post {
 export interface Comment {
   id: number;
   text: string;
+  media_path: string | null;
   created_at: string;
-  author: { id: number; username: string | null; first_name: string | null; last_name: string | null; photo_url: string | null };
+  author: { id: number; username: string | null; first_name: string | null; last_name: string | null; photo_url: string | null; avatar_url: string | null };
 }
 
 export interface StoryGroup {
-  author: { id: number; username: string | null; first_name: string | null; last_name: string | null; photo_url: string | null };
+  author: { id: number; username: string | null; first_name: string | null; last_name: string | null; photo_url: string | null; avatar_url: string | null };
   has_unseen: boolean;
   stories: { id: number; media_path: string; media_type: "photo" | "video"; created_at: string; expires_at: string; seen_by_me: boolean }[];
 }
 
 export const api = {
   me: () => request<UserProfile>("/users/me"),
-  updateMe: (data: { bio?: string; squad?: string }) =>
+  updateMe: (data: { bio?: string; squad?: string; avatar_source?: "telegram" | "custom" }) =>
     request<UserProfile>("/users/me", { method: "PATCH", body: JSON.stringify(data), headers: { "Content-Type": "application/json" } }),
+  uploadAvatar: (form: FormData) => request<UserProfile>("/users/me/avatar", { method: "POST", body: form }),
   user: (id: number) => request<UserProfile>(`/users/${id}`),
   searchUsers: (q: string) => request<UserProfile[]>(`/users?q=${encodeURIComponent(q)}`),
+  toggleFollow: (id: number) => request<{ following: boolean; follower_count: number; following_count: number }>(`/users/${id}/follow`, { method: "POST" }),
 
   feed: (before?: number) => request<Post[]>(`/posts${before ? `?before=${before}` : ""}`),
   userPosts: (userId: number) => request<Post[]>(`/posts/user/${userId}`),
@@ -98,8 +109,7 @@ export const api = {
   deletePost: (id: number) => request<{ ok: true }>(`/posts/${id}`, { method: "DELETE" }),
   toggleLike: (id: number) => request<{ liked: boolean; like_count: number }>(`/posts/${id}/like`, { method: "POST" }),
   comments: (id: number) => request<Comment[]>(`/posts/${id}/comments`),
-  addComment: (id: number, text: string) =>
-    request<Comment>(`/posts/${id}/comments`, { method: "POST", body: JSON.stringify({ text }), headers: { "Content-Type": "application/json" } }),
+  addComment: (id: number, form: FormData) => request<Comment>(`/posts/${id}/comments`, { method: "POST", body: form }),
 
   stories: () => request<StoryGroup[]>("/stories"),
   createStory: (form: FormData) => request<{ id: number; media_path: string; media_type: string; expires_at: string }>("/stories", { method: "POST", body: form }),

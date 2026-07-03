@@ -45,8 +45,8 @@ export default function StoriesBar({ groups, myUserId, onOpenGroup, onAddStory }
             className={`w-14 h-14 rounded-full p-[2px] ${g.has_unseen ? "bg-brand-500" : "bg-gray-200"}`}
           >
             <div className="w-full h-full rounded-full bg-white p-[2px]">
-              {g.author.photo_url ? (
-                <img src={g.author.photo_url} loading="lazy" className="w-full h-full rounded-full object-cover" />
+              {g.author.avatar_url ? (
+                <img src={g.author.avatar_url} loading="lazy" className="w-full h-full rounded-full object-cover" />
               ) : (
                 <div className="w-full h-full rounded-full bg-gray-100 flex items-center justify-center text-lg">
                   {displayName(g.author)[0]}

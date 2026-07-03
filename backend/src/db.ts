@@ -72,8 +72,18 @@ CREATE TABLE IF NOT EXISTS story_views (
   UNIQUE(story_id, user_id)
 );
 
+-- Подписки на новые публикации автора (feature: "подписаться на публикации").
+CREATE TABLE IF NOT EXISTS follows (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  follower_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  followee_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE(follower_id, followee_id)
+);
+
 CREATE INDEX IF NOT EXISTS idx_posts_created ON posts(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_stories_expires ON stories(expires_at);
+CREATE INDEX IF NOT EXISTS idx_follows_followee ON follows(followee_id);
 `);
 
 // Лёгкая миграция для баз, созданных до появления превьюшек (thumb_path).
@@ -85,5 +95,9 @@ function ensureColumn(table: string, column: string, type: string) {
   }
 }
 ensureColumn("posts", "thumb_path", "TEXT");
+// avatar_source: 'telegram' (по умолчанию, аватар из Telegram-профиля) | 'custom' (загруженный вручную).
+ensureColumn("users", "avatar_source", "TEXT NOT NULL DEFAULT 'telegram'");
+ensureColumn("users", "custom_avatar_path", "TEXT");
+ensureColumn("comments", "media_path", "TEXT");
 
 export default db;

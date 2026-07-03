@@ -7,9 +7,23 @@ import CreatePostModal from "../components/CreatePostModal";
 
 interface Props {
   me: UserProfile;
+  onViewProfile: (userId: number) => void;
 }
 
-export default function Feed({ me }: Props) {
+const AUTO_REFRESH_MS = 20000;
+
+// Объединяет свежие данные с текущими: обновляет счётчики у уже видимых постов
+// и добавляет новые сверху, не переставляя и не убирая уже показанные посты —
+// чтобы не дёргать скролл у того, кто читает ленту.
+function mergeFeed(prev: Post[], fresh: Post[]): Post[] {
+  const freshById = new Map(fresh.map((p) => [p.id, p]));
+  const existingIds = new Set(prev.map((p) => p.id));
+  const merged = prev.map((p) => freshById.get(p.id) || p);
+  const newOnes = fresh.filter((p) => !existingIds.has(p.id));
+  return [...newOnes, ...merged];
+}
+
+export default function Feed({ me, onViewProfile }: Props) {
   const [posts, setPosts] = useState<Post[] | null>(null);
   const [storyGroups, setStoryGroups] = useState<StoryGroup[]>([]);
   const [viewerIndex, setViewerIndex] = useState<number | null>(null);
@@ -26,8 +40,26 @@ export default function Feed({ me }: Props) {
     }
   }
 
+  async function refreshFeed() {
+    try {
+      const p = await api.feed();
+      setPosts((prev) => (prev === null ? p : mergeFeed(prev, p)));
+    } catch {
+      // тихо игнорируем ошибки фонового автообновления
+    }
+  }
+
   useEffect(() => {
     loadFeed();
+    const interval = setInterval(refreshFeed, AUTO_REFRESH_MS);
+    function onVisible() {
+      if (document.visibilityState === "visible") refreshFeed();
+    }
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, []);
 
   async function handleAddStory(file: File) {
@@ -68,6 +100,7 @@ export default function Feed({ me }: Props) {
             myUserId={me.id}
             myRole={me.role}
             onDeleted={(id) => setPosts((prev) => prev?.filter((p) => p.id !== id) || null)}
+            onViewProfile={onViewProfile}
           />
         ))
       )}

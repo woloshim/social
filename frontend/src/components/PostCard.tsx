@@ -9,6 +9,7 @@ interface Props {
   myUserId: number;
   myRole: string;
   onDeleted: (id: number) => void;
+  onViewProfile: (userId: number) => void;
 }
 
 function displayName(u: { first_name: string | null; username: string | null }) {
@@ -25,15 +26,19 @@ function timeAgo(iso: string) {
   return `${Math.floor(hours / 24)} дн назад`;
 }
 
-export default function PostCard({ post, myUserId, myRole, onDeleted }: Props) {
+export default function PostCard({ post, myUserId, myRole, onDeleted, onViewProfile }: Props) {
   const [liked, setLiked] = useState(post.liked_by_me);
   const [likeCount, setLikeCount] = useState(post.like_count);
   const [showComments, setShowComments] = useState(false);
   const [comments, setComments] = useState<Comment[] | null>(null);
   const [commentText, setCommentText] = useState("");
+  const [commentFile, setCommentFile] = useState<File | null>(null);
+  const [commentPreview, setCommentPreview] = useState<string | null>(null);
+  const [submittingComment, setSubmittingComment] = useState(false);
   const [showHeartBurst, setShowHeartBurst] = useState(false);
   const lastTapRef = useRef(0);
   const burstTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const commentFileRef = useRef<HTMLInputElement>(null);
 
   async function toggleLike() {
     hapticImpact("light");
@@ -92,12 +97,26 @@ export default function PostCard({ post, myUserId, myRole, onDeleted }: Props) {
     }
   }
 
+  function handleCommentFile(f: File | null) {
+    setCommentFile(f);
+    setCommentPreview(f ? URL.createObjectURL(f) : null);
+  }
+
   async function submitComment() {
     const text = commentText.trim();
-    if (!text) return;
-    const c = await api.addComment(post.id, text);
-    setComments((prev) => [...(prev || []), c]);
-    setCommentText("");
+    if (!text && !commentFile) return;
+    setSubmittingComment(true);
+    try {
+      const form = new FormData();
+      form.append("text", text);
+      if (commentFile) form.append("media", commentFile);
+      const c = await api.addComment(post.id, form);
+      setComments((prev) => [...(prev || []), c]);
+      setCommentText("");
+      handleCommentFile(null);
+    } finally {
+      setSubmittingComment(false);
+    }
   }
 
   async function handleDelete() {
@@ -111,15 +130,17 @@ export default function PostCard({ post, myUserId, myRole, onDeleted }: Props) {
   return (
     <div className="bg-white border-b border-gray-100">
       <div className="flex items-center gap-2 px-3 py-2">
-        {post.author.photo_url ? (
-          <img src={post.author.photo_url} className="w-8 h-8 rounded-full object-cover" />
-        ) : (
-          <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-sm">{displayName(post.author)[0]}</div>
-        )}
-        <div className="flex flex-col">
-          <span className="text-sm font-semibold">{displayName(post.author)}</span>
-          <span className="text-[11px] text-gray-400">{timeAgo(post.created_at)}</span>
-        </div>
+        <button onClick={() => onViewProfile(post.author.id)} className="flex items-center gap-2">
+          {post.author.avatar_url ? (
+            <img src={post.author.avatar_url} className="w-8 h-8 rounded-full object-cover" />
+          ) : (
+            <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-sm">{displayName(post.author)[0]}</div>
+          )}
+          <div className="flex flex-col items-start">
+            <span className="text-sm font-semibold">{displayName(post.author)}</span>
+            <span className="text-[11px] text-gray-400">{timeAgo(post.created_at)}</span>
+          </div>
+        </button>
         {post.visibility === "hide_from_counselors" && (
           <span className="ml-2 text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">🙈 скрыт от вожатых</span>
         )}
@@ -169,16 +190,53 @@ export default function PostCard({ post, myUserId, myRole, onDeleted }: Props) {
           ) : comments.length === 0 ? (
             <div className="text-xs text-gray-400">Комментариев пока нет</div>
           ) : (
-            <div className="flex flex-col gap-1.5 max-h-52 overflow-y-auto">
+            <div className="flex flex-col gap-2 max-h-64 overflow-y-auto">
               {comments.map((c) => (
-                <div key={c.id} className="text-sm">
-                  <span className="font-semibold mr-1">{displayName(c.author)}</span>
-                  {c.text}
+                <div key={c.id} className="text-sm flex items-start gap-2">
+                  <button onClick={() => onViewProfile(c.author.id)} className="shrink-0">
+                    {c.author.avatar_url ? (
+                      <img src={c.author.avatar_url} className="w-6 h-6 rounded-full object-cover mt-0.5" />
+                    ) : (
+                      <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-[10px] mt-0.5">
+                        {displayName(c.author)[0]}
+                      </div>
+                    )}
+                  </button>
+                  <div>
+                    <span className="font-semibold mr-1">{displayName(c.author)}</span>
+                    {c.text}
+                    {c.media_path && (
+                      <img src={mediaUrl(c.media_path)} loading="lazy" className="mt-1 max-h-40 rounded-lg object-cover" />
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
           )}
-          <div className="flex gap-2 mt-2">
+
+          {commentPreview && (
+            <div className="relative w-16 h-16 mt-2">
+              <img src={commentPreview} className="w-16 h-16 object-cover rounded-lg" />
+              <button
+                onClick={() => handleCommentFile(null)}
+                className="absolute -top-1.5 -right-1.5 bg-black/60 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
+              >
+                ×
+              </button>
+            </div>
+          )}
+
+          <div className="flex gap-2 mt-2 items-center">
+            <button onClick={() => commentFileRef.current?.click()} className="text-gray-400 text-lg px-1">
+              📷
+            </button>
+            <input
+              ref={commentFileRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => handleCommentFile(e.target.files?.[0] || null)}
+            />
             <input
               value={commentText}
               onChange={(e) => setCommentText(e.target.value)}
@@ -186,7 +244,7 @@ export default function PostCard({ post, myUserId, myRole, onDeleted }: Props) {
               placeholder="Написать комментарий…"
               className="flex-1 border border-gray-200 rounded-full px-3 py-1.5 text-sm outline-none focus:border-brand-400"
             />
-            <button onClick={submitComment} className="text-brand-600 text-sm font-semibold px-2">
+            <button onClick={submitComment} disabled={submittingComment} className="text-brand-600 text-sm font-semibold px-2">
               Отпр.
             </button>
           </div>

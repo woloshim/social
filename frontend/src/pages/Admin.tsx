@@ -74,8 +74,8 @@ export default function Admin() {
       <div className="flex flex-col gap-2">
         {filtered.map((u) => (
           <div key={u.id} className="border border-gray-100 rounded-xl p-3 flex items-center gap-3">
-            {u.photo_url ? (
-              <img src={u.photo_url} className="w-10 h-10 rounded-full object-cover" />
+            {u.avatar_url ? (
+              <img src={u.avatar_url} className="w-10 h-10 rounded-full object-cover" />
             ) : (
               <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">{(u.first_name || u.username || "?")[0]}</div>
             )}
@@ -96,12 +96,18 @@ export default function Admin() {
                 </option>
               ))}
             </select>
-            <input
-              defaultValue={u.squad || ""}
-              onBlur={(e) => e.target.value !== (u.squad || "") && setSquad(u.id, e.target.value)}
-              placeholder="Отряд"
-              className="w-16 border border-gray-200 rounded-lg text-xs px-2 py-1.5"
-            />
+            <select
+              value={u.squad || ""}
+              onChange={(e) => setSquad(u.id, e.target.value)}
+              className="w-20 border border-gray-200 rounded-lg text-xs px-2 py-1.5"
+            >
+              <option value="">Отряд —</option>
+              {["1", "2", "3", "4", "5"].map((s) => (
+                <option key={s} value={s}>
+                  Отряд {s}
+                </option>
+              ))}
+            </select>
           </div>
         ))}
       </div>

@@ -10,6 +10,17 @@ export default function App() {
   const [me, setMe] = useState<UserProfile | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<"feed" | "profile" | "admin">("feed");
+  const [viewUserId, setViewUserId] = useState<number | null>(null);
+
+  function changeTab(t: "feed" | "profile" | "admin") {
+    setViewUserId(null);
+    setTab(t);
+  }
+
+  function openProfile(userId: number) {
+    setViewUserId(userId);
+    setTab("profile");
+  }
 
   useEffect(() => {
     initTelegram();
@@ -40,10 +51,17 @@ export default function App() {
 
   return (
     <div className="min-h-full">
-      {tab === "feed" && <Feed me={me} />}
-      {tab === "profile" && <Profile me={me} onProfileUpdated={setMe} />}
+      {tab === "feed" && <Feed me={me} onViewProfile={openProfile} />}
+      {tab === "profile" && (
+        <Profile
+          me={me}
+          onProfileUpdated={setMe}
+          userId={viewUserId ?? undefined}
+          onBack={viewUserId !== null ? () => setViewUserId(null) : undefined}
+        />
+      )}
       {tab === "admin" && me.role === "admin" && <Admin />}
-      <BottomNav active={tab} onChange={setTab} isAdmin={me.role === "admin"} />
+      <BottomNav active={tab} onChange={changeTab} isAdmin={me.role === "admin"} />
     </div>
   );
 }

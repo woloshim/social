@@ -1,16 +1,19 @@
 import { Router } from "express";
 import db from "../db";
 import { requireRole } from "../auth";
+import { avatarUrl } from "../avatars";
 
 const router = Router();
+
+const VALID_SQUADS = new Set(["1", "2", "3", "4", "5"]);
 
 // Все роуты здесь требуют роль admin
 router.use(requireRole("admin"));
 
 // GET /api/admin/users — список всех пользователей для панели управления ролями
 router.get("/users", (_req, res) => {
-  const rows = db.prepare("SELECT * FROM users ORDER BY created_at DESC").all();
-  res.json(rows);
+  const rows = db.prepare("SELECT * FROM users ORDER BY created_at DESC").all() as any[];
+  res.json(rows.map((u) => ({ ...u, avatar_url: avatarUrl(u) })));
 });
 
 // PATCH /api/admin/users/:id/role — назначить роль (child | counselor | admin)
@@ -22,17 +25,22 @@ router.patch("/users/:id/role", (req, res) => {
   }
   const targetId = Number(req.params.id);
   db.prepare("UPDATE users SET role = ? WHERE id = ?").run(role, targetId);
-  const row = db.prepare("SELECT * FROM users WHERE id = ?").get(targetId);
-  res.json(row);
+  const row = db.prepare("SELECT * FROM users WHERE id = ?").get(targetId) as any;
+  res.json({ ...row, avatar_url: avatarUrl(row) });
 });
 
-// PATCH /api/admin/users/:id/squad — назначить отряд
+// PATCH /api/admin/users/:id/squad — назначить отряд (только 1-5, либо пусто = не назначен)
 router.patch("/users/:id/squad", (req, res) => {
-  const squad = String(req.body.squad || "").slice(0, 50);
+  const raw = String(req.body.squad || "").trim();
+  if (raw && !VALID_SQUADS.has(raw)) {
+    res.status(400).json({ error: "Отряд должен быть числом от 1 до 5" });
+    return;
+  }
+  const squad = raw || null;
   const targetId = Number(req.params.id);
   db.prepare("UPDATE users SET squad = ? WHERE id = ?").run(squad, targetId);
-  const row = db.prepare("SELECT * FROM users WHERE id = ?").get(targetId);
-  res.json(row);
+  const row = db.prepare("SELECT * FROM users WHERE id = ?").get(targetId) as any;
+  res.json({ ...row, avatar_url: avatarUrl(row) });
 });
 
 // GET /api/admin/stats — базовая статистика для админа

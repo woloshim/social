@@ -72,8 +72,8 @@ export default function StoryViewer({ groups, startIndex, onClose }: Props) {
       </div>
 
       <div className="flex items-center gap-2 px-3 py-2 text-white">
-        {group.author.photo_url ? (
-          <img src={group.author.photo_url} className="w-8 h-8 rounded-full object-cover" />
+        {group.author.avatar_url ? (
+          <img src={group.author.avatar_url} className="w-8 h-8 rounded-full object-cover" />
         ) : (
           <div className="w-8 h-8 rounded-full bg-white/20" />
         )}

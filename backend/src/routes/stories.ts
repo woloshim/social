@@ -2,6 +2,7 @@ import { Router } from "express";
 import db from "../db";
 import { upload, mediaTypeFromMime } from "../upload";
 import { processUploadedImage } from "../imageProcessing";
+import { avatarUrl } from "../avatars";
 
 const router = Router();
 const STORY_LIFETIME_MS = 24 * 60 * 60 * 1000;
@@ -14,6 +15,7 @@ function serializeAuthorStories(authorRow: any, stories: any[], viewerId: number
       first_name: authorRow.first_name,
       last_name: authorRow.last_name,
       photo_url: authorRow.photo_url,
+      avatar_url: avatarUrl({ avatar_source: authorRow.avatar_source, custom_avatar_path: authorRow.custom_avatar_path, photo_url: authorRow.photo_url }),
     },
     has_unseen: stories.some(
       (s) => !db.prepare("SELECT 1 FROM story_views WHERE story_id = ? AND user_id = ?").get(s.id, viewerId)
@@ -36,7 +38,7 @@ router.get("/", (req, res) => {
 
   const rows = db
     .prepare(
-      `SELECT s.*, u.username, u.first_name, u.last_name, u.photo_url
+      `SELECT s.*, u.username, u.first_name, u.last_name, u.photo_url, u.avatar_source, u.custom_avatar_path
        FROM stories s JOIN users u ON u.id = s.author_id
        WHERE s.expires_at > datetime('now')
        ORDER BY s.created_at ASC`
