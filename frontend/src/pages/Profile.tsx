@@ -90,9 +90,9 @@ export default function Profile({ me, onProfileUpdated }: Props) {
         {posts.map((p) => (
           <div key={p.id} className="aspect-square bg-black relative">
             {p.media_type === "photo" ? (
-              <img src={mediaUrl(p.media_path)} className="w-full h-full object-cover" />
+              <img src={mediaUrl(p.thumb_path || p.media_path)} loading="lazy" className="w-full h-full object-cover" />
             ) : (
-              <video src={mediaUrl(p.media_path)} className="w-full h-full object-cover" muted />
+              <video src={mediaUrl(p.media_path)} preload="metadata" className="w-full h-full object-cover" muted />
             )}
             {p.visibility === "hide_from_counselors" && (
               <span className="absolute top-1 right-1 text-xs">🙈</span>

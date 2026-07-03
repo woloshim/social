@@ -2,6 +2,7 @@ import { Router } from "express";
 import db from "../db";
 import { AuthedUser } from "../auth";
 import { upload, mediaTypeFromMime } from "../upload";
+import { processUploadedImage } from "../imageProcessing";
 
 const router = Router();
 
@@ -34,6 +35,7 @@ function serializePost(row: any, viewerId: number) {
       role: row.author_role,
     },
     media_path: `/uploads/${row.media_path}`,
+    thumb_path: row.thumb_path ? `/uploads/${row.thumb_path}` : null,
     media_type: row.media_type,
     caption: row.caption,
     visibility: row.visibility,
@@ -83,7 +85,7 @@ router.get("/user/:userId", (req, res) => {
 });
 
 // POST /api/posts — создать пост (multipart: media, caption, visibility)
-router.post("/", upload.single("media"), (req, res) => {
+router.post("/", upload.single("media"), async (req, res) => {
   const user = req.user!;
   if (!req.file) {
     res.status(400).json({ error: "Файл не загружен" });
@@ -93,9 +95,17 @@ router.post("/", upload.single("media"), (req, res) => {
   const caption = (req.body.caption || "").toString().slice(0, 2000);
   const mediaType = mediaTypeFromMime(req.file.mimetype);
 
+  let mediaFilename = req.file.filename;
+  let thumbFilename: string | null = null;
+  if (mediaType === "photo") {
+    const processed = await processUploadedImage(req.file.filename, req.file.mimetype, { withThumb: true });
+    mediaFilename = processed.mediaFilename;
+    thumbFilename = processed.thumbFilename;
+  }
+
   const info = db
-    .prepare(`INSERT INTO posts (author_id, media_path, media_type, caption, visibility) VALUES (?, ?, ?, ?, ?)`)
-    .run(user.id, req.file.filename, mediaType, caption, visibility);
+    .prepare(`INSERT INTO posts (author_id, media_path, thumb_path, media_type, caption, visibility) VALUES (?, ?, ?, ?, ?, ?)`)
+    .run(user.id, mediaFilename, thumbFilename, mediaType, caption, visibility);
 
   const row = db
     .prepare(

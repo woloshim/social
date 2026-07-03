@@ -62,6 +62,7 @@ export interface Post {
     role: string;
   };
   media_path: string;
+  thumb_path: string | null;
   media_type: "photo" | "video";
   caption: string | null;
   visibility: "public" | "hide_from_counselors";

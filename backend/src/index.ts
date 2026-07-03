@@ -1,7 +1,6 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
-import path from "path";
 import cron from "node-cron";
 import db from "./db";
 import { telegramAuth } from "./auth";
@@ -9,7 +8,9 @@ import usersRouter from "./routes/users";
 import postsRouter from "./routes/posts";
 import storiesRouter from "./routes/stories";
 import adminRouter from "./routes/admin";
+import backupRouter from "./routes/backup";
 import { createBot } from "./bot";
+import { UPLOADS_DIR } from "./paths";
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
@@ -20,11 +21,14 @@ app.use(
   })
 );
 app.use(express.json());
-app.use("/uploads", express.static(path.join(__dirname, "..", "uploads")));
+app.use("/uploads", express.static(UPLOADS_DIR));
 
 app.get("/health", (_req, res) => res.json({ ok: true }));
 
-// Все /api/* роуты требуют валидный Telegram initData
+// Роут бэкапа/восстановления — вне Telegram-авторизации, защищён своим секретом (см. routes/backup.ts)
+app.use("/api", backupRouter);
+
+// Все остальные /api/* роуты требуют валидный Telegram initData
 app.use("/api", telegramAuth);
 app.use("/api/users", usersRouter);
 app.use("/api/posts", postsRouter);

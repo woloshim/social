@@ -4,3 +4,4 @@ backend/data/
 backend/uploads/*
 !backend/uploads/.gitkeep
 .env
+vite.config.ts.timestamp-*.mjs

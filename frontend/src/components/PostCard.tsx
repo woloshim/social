@@ -93,9 +93,9 @@ export default function PostCard({ post, myUserId, myRole, onDeleted }: Props) {
 
       <div className="bg-black flex items-center justify-center">
         {post.media_type === "photo" ? (
-          <img src={mediaUrl(post.media_path)} className="w-full max-h-[480px] object-contain" />
+          <img src={mediaUrl(post.media_path)} loading="lazy" className="w-full max-h-[480px] object-contain" />
         ) : (
-          <video src={mediaUrl(post.media_path)} className="w-full max-h-[480px] object-contain" controls playsInline />
+          <video src={mediaUrl(post.media_path)} preload="metadata" className="w-full max-h-[480px] object-contain" controls playsInline />
         )}
       </div>
 

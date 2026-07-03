@@ -21,9 +21,9 @@ export default function StoriesBar({ groups, myUserId, onOpenGroup, onAddStory }
       <div className="flex flex-col items-center gap-1 w-16 shrink-0">
         <button
           onClick={() => fileInputRef.current?.click()}
-          className="relative w-14 h-14 rounded-full border-2 border-dashed border-brand-400 flex items-center justify-center text-brand-500 text-2xl"
+          className="relative w-14 h-14 rounded-full border border-dashed border-gray-300 flex items-center justify-center text-brand-500 text-xl"
         >
-          {myGroupIndex >= 0 ? "➕" : "➕"}
+          +
         </button>
         <span className="text-[10px] text-gray-500 truncate w-full text-center">Добавить</span>
         <input
@@ -42,13 +42,11 @@ export default function StoriesBar({ groups, myUserId, onOpenGroup, onAddStory }
       {groups.map((g, i) => (
         <button key={g.author.id} onClick={() => onOpenGroup(i)} className="flex flex-col items-center gap-1 w-16 shrink-0">
           <div
-            className={`w-14 h-14 rounded-full p-[2px] ${
-              g.has_unseen ? "bg-gradient-to-tr from-brand-400 to-pink-500" : "bg-gray-200"
-            }`}
+            className={`w-14 h-14 rounded-full p-[2px] ${g.has_unseen ? "bg-brand-500" : "bg-gray-200"}`}
           >
             <div className="w-full h-full rounded-full bg-white p-[2px]">
               {g.author.photo_url ? (
-                <img src={g.author.photo_url} className="w-full h-full rounded-full object-cover" />
+                <img src={g.author.photo_url} loading="lazy" className="w-full h-full rounded-full object-cover" />
               ) : (
                 <div className="w-full h-full rounded-full bg-gray-100 flex items-center justify-center text-lg">
                   {displayName(g.author)[0]}

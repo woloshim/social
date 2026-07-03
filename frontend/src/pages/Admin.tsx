@@ -45,21 +45,21 @@ export default function Admin() {
 
   return (
     <div className="pb-24 px-3">
-      <h1 className="text-xl font-bold text-brand-600 py-4">🛠️ Панель администратора</h1>
+      <h1 className="text-lg font-semibold text-gray-900 py-4">Панель администратора</h1>
 
       {stats && (
         <div className="grid grid-cols-3 gap-2 mb-4">
-          <div className="bg-brand-50 rounded-xl p-3 text-center">
-            <div className="text-xl font-bold text-brand-600">{stats.users}</div>
-            <div className="text-xs text-gray-500">участников</div>
+          <div className="border border-gray-100 rounded-xl p-3 text-center">
+            <div className="text-lg font-semibold text-gray-900">{stats.users}</div>
+            <div className="text-xs text-gray-400">участников</div>
           </div>
-          <div className="bg-brand-50 rounded-xl p-3 text-center">
-            <div className="text-xl font-bold text-brand-600">{stats.posts}</div>
-            <div className="text-xs text-gray-500">постов</div>
+          <div className="border border-gray-100 rounded-xl p-3 text-center">
+            <div className="text-lg font-semibold text-gray-900">{stats.posts}</div>
+            <div className="text-xs text-gray-400">постов</div>
           </div>
-          <div className="bg-brand-50 rounded-xl p-3 text-center">
-            <div className="text-xl font-bold text-brand-600">{stats.active_stories}</div>
-            <div className="text-xs text-gray-500">историй сейчас</div>
+          <div className="border border-gray-100 rounded-xl p-3 text-center">
+            <div className="text-lg font-semibold text-gray-900">{stats.active_stories}</div>
+            <div className="text-xs text-gray-400">историй сейчас</div>
           </div>
         </div>
       )}

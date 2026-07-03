@@ -1,6 +1,7 @@
 import { Router } from "express";
 import db from "../db";
 import { upload, mediaTypeFromMime } from "../upload";
+import { processUploadedImage } from "../imageProcessing";
 
 const router = Router();
 const STORY_LIFETIME_MS = 24 * 60 * 60 * 1000;
@@ -56,7 +57,7 @@ router.get("/", (req, res) => {
 });
 
 // POST /api/stories — загрузить историю
-router.post("/", upload.single("media"), (req, res) => {
+router.post("/", upload.single("media"), async (req, res) => {
   const user = req.user!;
   if (!req.file) {
     res.status(400).json({ error: "Файл не загружен" });
@@ -65,13 +66,19 @@ router.post("/", upload.single("media"), (req, res) => {
   const mediaType = mediaTypeFromMime(req.file.mimetype);
   const expiresAt = new Date(Date.now() + STORY_LIFETIME_MS).toISOString();
 
+  let mediaFilename = req.file.filename;
+  if (mediaType === "photo") {
+    const processed = await processUploadedImage(req.file.filename, req.file.mimetype, { withThumb: false });
+    mediaFilename = processed.mediaFilename;
+  }
+
   const info = db
     .prepare(`INSERT INTO stories (author_id, media_path, media_type, expires_at) VALUES (?, ?, ?, ?)`)
-    .run(user.id, req.file.filename, mediaType, expiresAt);
+    .run(user.id, mediaFilename, mediaType, expiresAt);
 
   res.status(201).json({
     id: info.lastInsertRowid,
-    media_path: `/uploads/${req.file.filename}`,
+    media_path: `/uploads/${mediaFilename}`,
     media_type: mediaType,
     expires_at: expiresAt,
   });

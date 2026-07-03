@@ -40,11 +40,13 @@ export default function Feed({ me }: Props) {
 
   return (
     <div className="pb-20">
-      <div className="sticky top-0 z-30 bg-white border-b border-gray-100 px-4 py-3 flex items-center">
-        <h1 className="text-xl font-bold text-brand-600">🏕️ Лагерь</h1>
+      <div className="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-gray-100 px-4 py-3 flex items-center">
+        <h1 className="text-[15px] font-semibold tracking-[0.18em] text-gray-900">
+          SPARTA <span className="text-brand-600">SOCIAL</span>
+        </h1>
         <button
           onClick={() => setShowCreate(true)}
-          className="ml-auto bg-brand-500 text-white rounded-full w-9 h-9 flex items-center justify-center text-xl"
+          className="ml-auto text-brand-600 border border-brand-200 rounded-full w-8 h-8 flex items-center justify-center text-lg leading-none"
         >
           +
         </button>
