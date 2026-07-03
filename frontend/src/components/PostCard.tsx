@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Post, Comment, api } from "../api";
+import { Post, Comment, api, mediaUrl } from "../api";
 import { hapticImpact } from "../telegram";
 
 interface Props {
@@ -93,9 +93,9 @@ export default function PostCard({ post, myUserId, myRole, onDeleted }: Props) {
 
       <div className="bg-black flex items-center justify-center">
         {post.media_type === "photo" ? (
-          <img src={post.media_path} className="w-full max-h-[480px] object-contain" />
+          <img src={mediaUrl(post.media_path)} className="w-full max-h-[480px] object-contain" />
         ) : (
-          <video src={post.media_path} className="w-full max-h-[480px] object-contain" controls playsInline />
+          <video src={mediaUrl(post.media_path)} className="w-full max-h-[480px] object-contain" controls playsInline />
         )}
       </div>
 

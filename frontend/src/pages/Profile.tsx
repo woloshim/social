@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api, Post, UserProfile } from "../api";
+import { api, Post, UserProfile, mediaUrl } from "../api";
 
 interface Props {
   me: UserProfile;
@@ -90,9 +90,9 @@ export default function Profile({ me, onProfileUpdated }: Props) {
         {posts.map((p) => (
           <div key={p.id} className="aspect-square bg-black relative">
             {p.media_type === "photo" ? (
-              <img src={p.media_path} className="w-full h-full object-cover" />
+              <img src={mediaUrl(p.media_path)} className="w-full h-full object-cover" />
             ) : (
-              <video src={p.media_path} className="w-full h-full object-cover" muted />
+              <video src={mediaUrl(p.media_path)} className="w-full h-full object-cover" muted />
             )}
             {p.visibility === "hide_from_counselors" && (
               <span className="absolute top-1 right-1 text-xs">🙈</span>

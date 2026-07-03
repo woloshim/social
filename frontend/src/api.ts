@@ -1,8 +1,20 @@
 import { getInitData } from "./telegram";
 
-// В проде фронт и бэк раздаются с одного домена через nginx/caddy proxy (см. README),
-// поэтому относительный путь /api работает и в деве (vite proxy) и в проде.
-const API_BASE = "/api";
+// Если фронт и бэк раздаются с одного домена (см. README, вариант с nginx/caddy proxy),
+// оставьте VITE_API_BASE пустым — относительный путь /api будет работать сам.
+// Если фронт и бэк — это два разных сервиса на разных доменах (например, два Web
+// Service на Render), укажите в переменной окружения сборки VITE_API_BASE полный
+// адрес бэкенда, например VITE_API_BASE=https://social-uzgn.onrender.com
+export const API_ORIGIN = (import.meta.env.VITE_API_BASE || "").replace(/\/$/, "");
+const API_BASE = `${API_ORIGIN}/api`;
+
+// Файлы (фото/видео) отдаются бэкендом по относительному пути /uploads/...,
+// поэтому их тоже нужно приводить к абсолютному адресу бэкенда.
+export function mediaUrl(path: string): string {
+  if (!path) return path;
+  if (/^https?:\/\//i.test(path)) return path;
+  return `${API_ORIGIN}${path}`;
+}
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {

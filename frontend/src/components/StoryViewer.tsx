@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { StoryGroup, api } from "../api";
+import { StoryGroup, api, mediaUrl } from "../api";
 
 interface Props {
   groups: StoryGroup[];
@@ -85,9 +85,9 @@ export default function StoryViewer({ groups, startIndex, onClose }: Props) {
 
       <div className="flex-1 relative flex items-center justify-center">
         {story.media_type === "photo" ? (
-          <img src={story.media_path} className="max-h-full max-w-full object-contain" />
+          <img src={mediaUrl(story.media_path)} className="max-h-full max-w-full object-contain" />
         ) : (
-          <video src={story.media_path} className="max-h-full max-w-full object-contain" autoPlay muted playsInline />
+          <video src={mediaUrl(story.media_path)} className="max-h-full max-w-full object-contain" autoPlay muted playsInline />
         )}
         <button onClick={goPrev} className="absolute left-0 top-0 h-full w-1/3" aria-label="Назад" />
         <button onClick={goNext} className="absolute right-0 top-0 h-full w-1/3" aria-label="Вперёд" />
