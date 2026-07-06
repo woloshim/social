@@ -224,10 +224,19 @@ export default function Profile({ me, onProfileUpdated, userId, onBack }: Props)
               <img src={mediaUrl(p.thumb_path || p.media_path)} loading="lazy" className="w-full h-full object-cover" />
             ) : p.media_type === "video" ? (
               <video src={mediaUrl(p.media_path)} preload="metadata" className="w-full h-full object-cover" muted />
+            ) : p.media_type === "carousel" ? (
+              <img
+                src={mediaUrl(p.thumb_path || p.media?.[0]?.thumb_path || p.media?.[0]?.media_path)}
+                loading="lazy"
+                className="w-full h-full object-cover"
+              />
             ) : (
               <div className="w-full h-full flex items-center justify-center p-2">
                 <span className="text-[10px] leading-snug text-ink-300 text-center line-clamp-5">{p.caption}</span>
               </div>
+            )}
+            {p.media_type === "carousel" && (
+              <span className="absolute top-1 left-1 text-xs">📑</span>
             )}
             {p.visibility === "hide_from_counselors" && (
               <span className="absolute top-1 right-1 text-xs">🙈</span>

@@ -81,9 +81,30 @@ CREATE TABLE IF NOT EXISTS follows (
   UNIQUE(follower_id, followee_id)
 );
 
+-- Просмотры постов (для счётчика "сколько раз посмотрели", виден только автору).
+CREATE TABLE IF NOT EXISTS post_views (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  post_id INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  viewed_at TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE(post_id, user_id)
+);
+
+-- Доп. фото для постов-каруселей (Instagram-style слайды). Первый слайд по position=0.
+CREATE TABLE IF NOT EXISTS post_media (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  post_id INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+  media_path TEXT NOT NULL,
+  thumb_path TEXT,
+  media_type TEXT NOT NULL DEFAULT 'photo' CHECK (media_type IN ('photo')),
+  position INTEGER NOT NULL DEFAULT 0
+);
+
 CREATE INDEX IF NOT EXISTS idx_posts_created ON posts(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_stories_expires ON stories(expires_at);
 CREATE INDEX IF NOT EXISTS idx_follows_followee ON follows(followee_id);
+CREATE INDEX IF NOT EXISTS idx_post_views_post ON post_views(post_id);
+CREATE INDEX IF NOT EXISTS idx_post_media_post ON post_media(post_id, position);
 `);
 
 // Лёгкая миграция для баз, созданных до появления превьюшек (thumb_path).
@@ -138,5 +159,45 @@ function migratePostsAllowText() {
   }
 }
 migratePostsAllowText();
+
+// Миграция: разрешить media_type = 'carousel' (пост-слайдшоу из нескольких фото, как в Instagram).
+// Сами файлы карусели лежат в отдельной таблице post_media; на самой posts это просто ещё одно
+// допустимое значение media_type в CHECK-констрейнте. SQLite не даёт менять CHECK через ALTER
+// TABLE, поэтому снова пересобираем таблицу целиком (как в migratePostsAllowText). Идемпотентно:
+// проверяем текст constraint'а в sqlite_master — если 'carousel' уже там, ничего не делаем.
+function migratePostsAllowCarousel() {
+  const row = db.prepare(`SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'posts'`).get() as
+    | { sql: string }
+    | undefined;
+  if (!row || row.sql.includes("'carousel'")) return; // уже мигрировано (или таблицы ещё нет)
+
+  const migrate = db.transaction(() => {
+    db.exec(`
+      CREATE TABLE posts_new (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        author_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        media_path TEXT,
+        media_type TEXT NOT NULL CHECK (media_type IN ('photo','video','text','carousel')),
+        thumb_path TEXT,
+        caption TEXT,
+        visibility TEXT NOT NULL DEFAULT 'public' CHECK (visibility IN ('public','hide_from_counselors')),
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+      INSERT INTO posts_new (id, author_id, media_path, media_type, thumb_path, caption, visibility, created_at)
+        SELECT id, author_id, media_path, media_type, thumb_path, caption, visibility, created_at FROM posts;
+      DROP TABLE posts;
+      ALTER TABLE posts_new RENAME TO posts;
+      CREATE INDEX IF NOT EXISTS idx_posts_created ON posts(created_at DESC);
+    `);
+  });
+
+  db.pragma("foreign_keys = OFF");
+  try {
+    migrate();
+  } finally {
+    db.pragma("foreign_keys = ON");
+  }
+}
+migratePostsAllowCarousel();
 
 export default db;

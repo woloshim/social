@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Post, Comment, api, mediaUrl } from "../api";
 import { hapticImpact } from "../telegram";
 
@@ -36,9 +36,44 @@ export default function PostCard({ post, myUserId, myRole, onDeleted, onViewProf
   const [commentPreview, setCommentPreview] = useState<string | null>(null);
   const [submittingComment, setSubmittingComment] = useState(false);
   const [showHeartBurst, setShowHeartBurst] = useState(false);
+  const [carouselIndex, setCarouselIndex] = useState(0);
+  const [viewCount, setViewCount] = useState(post.view_count);
   const lastTapRef = useRef(0);
   const burstTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const commentFileRef = useRef<HTMLInputElement>(null);
+  const carouselRef = useRef<HTMLDivElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const viewFiredRef = useRef(false);
+
+  // Засчитываем просмотр один раз, когда пост реально появился во вьюпорте (не просто отрисовался
+  // где-то на странице) — это отличает настоящий просмотр от фонового 20-секундного опроса ленты,
+  // который просто обновляет данные, а не "показывает" пост пользователю заново.
+  useEffect(() => {
+    if (post.author.id === myUserId) return; // автор не считает себе просмотры
+    const el = cardRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (viewFiredRef.current) return;
+        const entry = entries[0];
+        if (entry && entry.isIntersecting) {
+          viewFiredRef.current = true;
+          api.viewPost(post.id).catch(() => {});
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.5 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [post.id]);
+
+  function handleCarouselScroll() {
+    const el = carouselRef.current;
+    if (!el || el.clientWidth === 0) return;
+    setCarouselIndex(Math.round(el.scrollLeft / el.clientWidth));
+  }
 
   async function toggleLike() {
     hapticImpact("light");
@@ -128,7 +163,7 @@ export default function PostCard({ post, myUserId, myRole, onDeleted, onViewProf
   const canDelete = post.author.id === myUserId || myRole === "admin";
 
   return (
-    <div className="bg-ink-900/60 border border-white/5 rounded-2xl mx-3 mb-3 overflow-hidden">
+    <div ref={cardRef} className="bg-ink-900/60 border border-white/5 rounded-2xl mx-3 mb-3 overflow-hidden">
       <div className="flex items-center gap-2 px-3 py-2">
         <button onClick={() => onViewProfile(post.author.id)} className="flex items-center gap-2">
           {post.author.avatar_url ? (
@@ -155,6 +190,40 @@ export default function PostCard({ post, myUserId, myRole, onDeleted, onViewProf
         <div className="px-4 py-6 text-[15px] leading-relaxed text-white whitespace-pre-wrap break-words">
           {post.caption}
         </div>
+      ) : post.media_type === "carousel" ? (
+        <div className="relative bg-black">
+          <div
+            ref={carouselRef}
+            onScroll={handleCarouselScroll}
+            onClick={handleMediaTap}
+            className="flex overflow-x-auto snap-x snap-mandatory"
+          >
+            {(post.media || []).map((m, idx) => (
+              <img
+                key={idx}
+                src={mediaUrl(m.media_path)}
+                loading="lazy"
+                className="w-full shrink-0 snap-center max-h-[480px] object-contain"
+                draggable={false}
+              />
+            ))}
+          </div>
+          {(post.media?.length || 0) > 1 && (
+            <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1.5">
+              {(post.media || []).map((_, idx) => (
+                <span
+                  key={idx}
+                  className={`w-1.5 h-1.5 rounded-full ${idx === carouselIndex ? "bg-white" : "bg-white/40"}`}
+                />
+              ))}
+            </div>
+          )}
+          {showHeartBurst && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <span className="text-white text-8xl drop-shadow-lg animate-heart-burst">❤️</span>
+            </div>
+          )}
+        </div>
       ) : (
         <div className="relative bg-black flex items-center justify-center" onClick={handleMediaTap}>
           {post.media_type === "photo" ? (
@@ -177,8 +246,14 @@ export default function PostCard({ post, myUserId, myRole, onDeleted, onViewProf
         <button onClick={loadComments} className="text-2xl leading-none">
           💬
         </button>
-        <span className="text-sm text-ink-500 ml-auto">
+        <span className="text-sm text-ink-500 ml-auto text-right">
           {likeCount} лайков · {post.comment_count + (comments ? comments.length - post.comment_count : 0)} коммент.
+          {viewCount !== undefined && (
+            <>
+              <br />
+              👁 {viewCount} просмотров
+            </>
+          )}
         </span>
       </div>
 

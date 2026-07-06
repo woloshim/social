@@ -48,6 +48,26 @@ function serializePost(row: any, viewerId: number) {
   const likedByMe = db
     .prepare("SELECT 1 FROM likes WHERE post_id = ? AND user_id = ?")
     .get(row.id, viewerId);
+
+  // Слайды карусели (только для media_type = 'carousel') — отдельная таблица post_media.
+  let media: { media_path: string; thumb_path: string | null }[] | undefined;
+  if (row.media_type === "carousel") {
+    const mediaRows = db
+      .prepare("SELECT media_path, thumb_path FROM post_media WHERE post_id = ? ORDER BY position ASC")
+      .all(row.id) as { media_path: string; thumb_path: string | null }[];
+    media = mediaRows.map((m) => ({
+      media_path: `/uploads/${m.media_path}`,
+      thumb_path: m.thumb_path ? `/uploads/${m.thumb_path}` : null,
+    }));
+  }
+
+  // Счётчик просмотров виден только автору поста — остальным пользователям не отдаём его вовсе,
+  // чтобы не превращать это в публичную метрику (это личная статистика автора).
+  const viewCount =
+    row.author_id === viewerId
+      ? (db.prepare("SELECT COUNT(*) c FROM post_views WHERE post_id = ?").get(row.id) as any).c
+      : undefined;
+
   return {
     id: row.id,
     author: {
@@ -62,12 +82,14 @@ function serializePost(row: any, viewerId: number) {
     media_path: row.media_path ? `/uploads/${row.media_path}` : null,
     thumb_path: row.thumb_path ? `/uploads/${row.thumb_path}` : null,
     media_type: row.media_type,
+    media,
     caption: row.caption,
     visibility: row.visibility,
     created_at: row.created_at,
     like_count: likeCount.c,
     comment_count: commentCount.c,
     liked_by_me: !!likedByMe,
+    view_count: viewCount,
   };
 }
 
@@ -109,14 +131,17 @@ router.get("/user/:userId", (req, res) => {
   res.json(rows.map((r) => serializePost(r, user.id)));
 });
 
-// POST /api/posts — создать пост (multipart: media, caption, visibility).
-// Медиа необязательно: если файла нет, но есть текст в caption — публикуется текстовый пост.
-router.post("/", upload.single("media"), async (req, res) => {
+// POST /api/posts — создать пост (multipart: media (1 или несколько файлов), caption, visibility).
+// Медиа необязательно: если файлов нет, но есть текст в caption — публикуется текстовый пост.
+// Если файлов больше одного — это карусель (слайдшоу из фото, как в Instagram); видео в карусели
+// не поддерживаем, только фото.
+router.post("/", upload.array("media", 10), async (req, res) => {
   const user = req.user!;
   const visibility = req.body.visibility === "hide_from_counselors" ? "hide_from_counselors" : "public";
   const caption = (req.body.caption || "").toString().trim().slice(0, 2000);
+  const files = (req.files as Express.Multer.File[] | undefined) || [];
 
-  if (!req.file && !caption) {
+  if (files.length === 0 && !caption) {
     res.status(400).json({ error: "Добавь фото/видео или текст" });
     return;
   }
@@ -124,20 +149,45 @@ router.post("/", upload.single("media"), async (req, res) => {
   let mediaFilename: string | null = null;
   let thumbFilename: string | null = null;
   let mediaType: string = "text";
+  const carouselItems: { mediaFilename: string; thumbFilename: string | null }[] = [];
 
-  if (req.file) {
-    mediaType = mediaTypeFromMime(req.file.mimetype);
-    mediaFilename = req.file.filename;
+  if (files.length === 1) {
+    const file = files[0];
+    mediaType = mediaTypeFromMime(file.mimetype);
+    mediaFilename = file.filename;
     if (mediaType === "photo") {
-      const processed = await processUploadedImage(req.file.filename, req.file.mimetype, { withThumb: true });
+      const processed = await processUploadedImage(file.filename, file.mimetype, { withThumb: true });
       mediaFilename = processed.mediaFilename;
       thumbFilename = processed.thumbFilename;
     }
+  } else if (files.length > 1) {
+    const nonPhoto = files.find((f) => mediaTypeFromMime(f.mimetype) !== "photo");
+    if (nonPhoto) {
+      res.status(400).json({ error: "В карусель можно добавить только фото (без видео)" });
+      return;
+    }
+    mediaType = "carousel";
+    for (const file of files) {
+      const processed = await processUploadedImage(file.filename, file.mimetype, { withThumb: true });
+      carouselItems.push({ mediaFilename: processed.mediaFilename, thumbFilename: processed.thumbFilename });
+    }
+    // Обложка карусели в самой строке posts — превьюшка первого слайда (используется, например,
+    // в сетке профиля).
+    thumbFilename = carouselItems[0].thumbFilename;
   }
 
   const info = db
     .prepare(`INSERT INTO posts (author_id, media_path, thumb_path, media_type, caption, visibility) VALUES (?, ?, ?, ?, ?, ?)`)
     .run(user.id, mediaFilename, thumbFilename, mediaType, caption, visibility);
+
+  if (carouselItems.length > 0) {
+    const insertMedia = db.prepare(
+      "INSERT INTO post_media (post_id, media_path, thumb_path, position) VALUES (?, ?, ?, ?)"
+    );
+    carouselItems.forEach((item, idx) => {
+      insertMedia.run(info.lastInsertRowid, item.mediaFilename, item.thumbFilename, idx);
+    });
+  }
 
   const row = db
     .prepare(
@@ -157,6 +207,28 @@ router.post("/", upload.single("media"), async (req, res) => {
       notifyUser(telegramId, `📸 ${displayName(user)} опубликовал(а) новый пост в Sparta Social`);
     }
   }
+});
+
+// POST /api/posts/:id/view — отметить, что текущий пользователь посмотрел пост.
+// Идемпотентно (UNIQUE(post_id,user_id) + INSERT OR IGNORE) — повторные "просмотры" в рамках
+// одной ленты не плодят дубликаты. Просмотр самим автором своего поста не считаем.
+router.post("/:id/view", (req, res) => {
+  const user = req.user!;
+  const postId = Number(req.params.id);
+  const post = db.prepare("SELECT author_id FROM posts WHERE id = ?").get(postId) as { author_id: number } | undefined;
+  if (!post) {
+    res.status(404).json({ error: "Пост не найден" });
+    return;
+  }
+  if (post.author_id !== user.id) {
+    db.prepare("INSERT OR IGNORE INTO post_views (post_id, user_id) VALUES (?, ?)").run(postId, user.id);
+  }
+  if (post.author_id === user.id) {
+    const viewCount = (db.prepare("SELECT COUNT(*) c FROM post_views WHERE post_id = ?").get(postId) as any).c;
+    res.json({ view_count: viewCount });
+    return;
+  }
+  res.json({ ok: true });
 });
 
 // DELETE /api/posts/:id — автор или admin может удалить

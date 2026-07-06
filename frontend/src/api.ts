@@ -66,18 +66,27 @@ export interface PostAuthor {
   role: string;
 }
 
+export interface PostMedia {
+  media_path: string;
+  thumb_path: string | null;
+}
+
 export interface Post {
   id: number;
   author: PostAuthor;
   media_path: string | null;
   thumb_path: string | null;
-  media_type: "photo" | "video" | "text";
+  media_type: "photo" | "video" | "text" | "carousel";
+  // Слайды карусели — присутствует только когда media_type === "carousel".
+  media?: PostMedia[];
   caption: string | null;
   visibility: "public" | "hide_from_counselors";
   created_at: string;
   like_count: number;
   comment_count: number;
   liked_by_me: boolean;
+  // Приходит с сервера только для автора поста (иначе undefined) — счётчик просмотров.
+  view_count?: number;
 }
 
 export interface Comment {
@@ -108,6 +117,7 @@ export const api = {
   createPost: (form: FormData) => request<Post>("/posts", { method: "POST", body: form }),
   deletePost: (id: number) => request<{ ok: true }>(`/posts/${id}`, { method: "DELETE" }),
   toggleLike: (id: number) => request<{ liked: boolean; like_count: number }>(`/posts/${id}/like`, { method: "POST" }),
+  viewPost: (id: number) => request<{ ok?: true; view_count?: number }>(`/posts/${id}/view`, { method: "POST" }),
   comments: (id: number) => request<Comment[]>(`/posts/${id}/comments`),
   addComment: (id: number, form: FormData) => request<Comment>(`/posts/${id}/comments`, { method: "POST", body: form }),
 
